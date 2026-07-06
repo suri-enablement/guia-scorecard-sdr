@@ -190,6 +190,31 @@
     font-style: italic;
   }
 
+  /* ── OPÇÕES (A / B) ── */
+  .option-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: #e3e8f7;
+  }
+  .option-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .option-item:first-child { padding-top: 0; }
+  .option-letter {
+    min-width: 20px; height: 20px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+    color: var(--green);
+    font-size: 10px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
   /* ── FOOTER NAV ── */
   .block-footer {
     display: flex;
@@ -289,12 +314,18 @@ const BLOCKS = [
     items: [
       {
         text: "Se apresente como especialista",
-        instruction: "Me chamo [fulano], especialista da Suri...",
+        options: [
+          "Me chamo [nome], especialista da Suri.",
+          "Oi, aqui é o [nome], sou especialista da Suri."
+        ],
         pending: false
       },
       {
         text: "Gere autoridade",
-        instruction: "A Suri é uma plataforma especializada em IA para vendas e atendimento conversacional e faz parte da TOTVS, a maior empresa de tecnologia do Brasil.",
+        options: [
+          "A Suri é uma plataforma especializada em IA para vendas e atendimento conversacional e faz parte da TOTVS, a maior empresa de tecnologia do Brasil.",
+          "Somos parte da TOTVS, maior empresa de tecnologia do Brasil, e desenvolvemos IA especializada em vendas e atendimento via WhatsApp."
+        ],
         pending: false
       }
     ]
@@ -306,23 +337,35 @@ const BLOCKS = [
     items: [
       {
         text: "Pergunte qual a dor principal do lead",
-        instruction: "[INSTRUÇÃO PENDENTE]",
-        pending: true
+        options: [
+          "Você se conectou com a gente, o que te motivou? Qual é o maior gargalo no seu atendimento hoje?",
+          "Antes de te contar mais sobre a Suri, me conta: qual é o maior desafio no seu atendimento via WhatsApp?"
+        ],
+        pending: false
       },
       {
         text: "Valide urgência ou interesse em resolver o problema",
-        instruction: "[INSTRUÇÃO PENDENTE]",
-        pending: true
+        options: [
+          "Isso é algo que vocês querem resolver nos próximos meses ou já está urgente agora?",
+          "Você está em fase de pesquisa ou já tem um prazo em mente pra implementar uma solução?"
+        ],
+        pending: false
       },
       {
         text: "Pergunte ou valide quantos funcionários a empresa possui",
-        instruction: "[INSTRUÇÃO PENDENTE]",
-        pending: true
+        options: [
+          "Só pra eu entender o tamanho da operação: quantas pessoas trabalham na empresa hoje?",
+          "Me fala um pouco do porte da empresa — quantos colaboradores vocês têm?"
+        ],
+        pending: false
       },
       {
         text: "Pergunte se há capacidade de investimento mínima de R$ 660,00",
-        instruction: "[INSTRUÇÃO PENDENTE]",
-        pending: true
+        options: [
+          "Nossos planos começam a partir de R$ 660 por mês. Isso está dentro da faixa de investimento que vocês têm disponível?",
+          "Só pra alinhar expectativa: o plano de entrada é R$ 660/mês. Faz sentido pro momento de vocês?"
+        ],
+        pending: false
       }
     ]
   },
@@ -333,8 +376,11 @@ const BLOCKS = [
     items: [
       {
         text: "Valide a situação do site do lead e informe ser necessário ter um site",
-        instruction: "[INSTRUÇÃO PENDENTE]",
-        pending: true
+        options: [
+          "Vocês têm um site no ar? Pergunto porque pra ativar o WhatsApp Oficial, a Meta exige um site ativo da empresa.",
+          "Só uma validação rápida: vocês têm site? É um requisito obrigatório da Meta pra homologar o número."
+        ],
+        pending: false
       }
     ]
   },
@@ -346,13 +392,19 @@ const BLOCKS = [
     items: [
       {
         text: "Confirme dia, data e hora da reunião",
-        instruction: "[INSTRUÇÃO PENDENTE]",
-        pending: true
+        options: [
+          "Então fica confirmado: [dia], [data] às [hora]. Você vai receber o convite agora pelo WhatsApp.",
+          "Perfeito, agendado pra [dia] às [hora]. Vou te mandar o link da reunião por WhatsApp já."
+        ],
+        pending: false
       },
       {
         text: "Confirme envio do convite por WhatsApp",
-        instruction: "[INSTRUÇÃO PENDENTE]",
-        pending: true
+        options: [
+          "Vou te mandar o link agora mesmo nesse número. Confirma pra mim que chegou, tá?",
+          "O convite vai chegar aí no WhatsApp em instantes. Qualquer coisa é só me chamar nesse mesmo número."
+        ],
+        pending: false
       }
     ]
   },
@@ -363,8 +415,11 @@ const BLOCKS = [
     items: [
       {
         text: "Contextualize o lead sobre o que acontecerá na reunião com o closer",
-        instruction: "[INSTRUÇÃO PENDENTE]",
-        pending: true
+        options: [
+          "Na reunião, o especialista já vai entrar sabendo do seu cenário e vai te mostrar como a Suri resolve isso na prática. Vai ser rápido e direto — uns 30 minutos.",
+          "Você vai conversar com um dos nossos especialistas. Ele já vai estar por dentro do que você me contou e vai te mostrar a solução aplicada ao seu negócio."
+        ],
+        pending: false
       }
     ]
   }
@@ -408,12 +463,22 @@ function renderBlocks() {
     const itemsHTML = b.items.map((item, ii) => {
       const key = `${bi}-${ii}`;
       const pendingCls = item.pending ? ' pending' : '';
+
+      let content = '';
+      if (item.options) {
+        content = item.options.map((opt, oi) =>
+          `<div class="option-item"><span class="option-letter">${String.fromCharCode(65+oi)}</span>${opt}</div>`
+        ).join('');
+      } else {
+        content = item.instruction || '';
+      }
+
       return `<div class="item">
         <div class="item-text">${item.text}</div>
         <button class="instr-toggle" onclick="toggleInstr(event,'instr-${key}',this)">
           <span class="instr-arrow">▶</span> ver instrução
         </button>
-        <div class="instr-box${pendingCls}" id="instr-${key}">${item.instruction}</div>
+        <div class="instr-box${pendingCls}" id="instr-${key}">${content}</div>
       </div>`;
     }).join('');
 
