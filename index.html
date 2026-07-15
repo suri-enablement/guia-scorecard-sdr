@@ -352,6 +352,39 @@
   }
   .item-condition::before { content: "⚠️ "; }
 
+  /* ── NÃO SE APLICA (itens condicionais) ── */
+  .item-na-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 6px;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 3px 8px 3px 3px;
+    border-radius: 100px;
+    background: var(--surface2);
+    transition: all 0.15s;
+  }
+  .item-na-toggle:hover { background: var(--border); }
+  .item-na-toggle.active { background: var(--gray); color: #fff; }
+  .item-na-box {
+    width: 16px; height: 16px;
+    border-radius: 5px;
+    border: 1.5px solid var(--border);
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .item-na-toggle.active .item-na-box { background: rgba(255,255,255,0.25); border-color: transparent; }
+  .item-na-svg { display: none; }
+  .item-na-toggle.active .item-na-svg { display: block; }
+  .item.na { background: var(--surface2); }
+  .item.na .item-text { color: var(--text-muted); font-style: italic; }
+  .item.na .item-checkbox { border-color: var(--border); opacity: 0.5; }
+
   /* ── DICA SPIN (não pontua) ── */
   .item-tip {
     display: flex;
@@ -725,10 +758,12 @@ const BLOCKS = [
 
 // ── STATE ──
 let checked = BLOCKS.map(b => new Array(b.items.length).fill(false));
+let notApplicable = BLOCKS.map(b => new Array(b.items.length).fill(false));
 let expanded = new Array(BLOCKS.length).fill(false);
 
 function totalItems() { return BLOCKS.reduce((s,b) => s + b.items.length, 0); }
-function blockChecked(bi) { return checked[bi].filter(Boolean).length; }
+function isDone(bi, ii) { return checked[bi][ii] || notApplicable[bi][ii]; }
+function blockChecked(bi) { return checked[bi].filter((v,ii) => isDone(bi,ii)).length; }
 
 function weightedScore() {
   let score = 0;
@@ -770,7 +805,9 @@ function renderBlocks() {
     const itemsHTML = b.items.map((item, ii) => {
       const key = `${bi}-${ii}`;
       const isChecked = checked[bi][ii];
+      const isNA = notApplicable[bi][ii];
       const checkedCls = isChecked ? ' checked' : '';
+      const naCls = isNA ? ' na' : '';
 
       const optsHTML = item.options.map((opt, oi) =>
         `<div class="option-item"><span class="option-letter">${String.fromCharCode(65+oi)}</span>${opt}</div>`
@@ -781,7 +818,14 @@ function renderBlocks() {
         <div><span class="item-tip-label">DICA SPIN — NÃO PONTUA</span>${item.tip}</div>
       </div>` : '';
 
-      return `<div class="item${checkedCls}" onclick="toggleCheck(${bi},${ii})">
+      const naToggleHTML = item.condition ? `<div class="item-na-toggle${isNA ? ' active' : ''}" onclick="toggleNA(event,${bi},${ii})">
+          <div class="item-na-box">
+            <svg class="item-na-svg" width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6h8" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <span>Não se aplica — contar automaticamente</span>
+        </div>` : '';
+
+      return `<div class="item${checkedCls}${naCls}" onclick="toggleCheck(${bi},${ii})">
         <div class="item-checkbox">
           <svg class="item-check-svg" width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -790,6 +834,7 @@ function renderBlocks() {
         <div class="item-content">
           <div class="item-text">${item.text}</div>
           ${item.condition ? `<div class="item-condition">${item.condition}</div>` : ''}
+          ${naToggleHTML}
           ${tipHTML}
           <button class="instr-toggle" onclick="toggleInstr(event,'instr-${key}',this)">
             <span class="instr-arrow">▶</span> ver instrução
@@ -838,6 +883,17 @@ function jumpToBlock(bi) {
 
 function toggleCheck(bi, ii) {
   checked[bi][ii] = !checked[bi][ii];
+  if (checked[bi][ii]) notApplicable[bi][ii] = false;
+  render();
+  const pill = document.getElementById('scorePill');
+  pill.classList.add('bump');
+  setTimeout(() => pill.classList.remove('bump'), 200);
+}
+
+function toggleNA(e, bi, ii) {
+  e.stopPropagation();
+  notApplicable[bi][ii] = !notApplicable[bi][ii];
+  if (notApplicable[bi][ii]) checked[bi][ii] = false;
   render();
   const pill = document.getElementById('scorePill');
   pill.classList.add('bump');
@@ -896,6 +952,7 @@ function hideResult() {
 
 function restart() {
   checked = BLOCKS.map(b => new Array(b.items.length).fill(false));
+  notApplicable = BLOCKS.map(b => new Array(b.items.length).fill(false));
   expanded = new Array(BLOCKS.length).fill(false);
   hideResult();
   render();
