@@ -963,6 +963,7 @@ function checkPassword() {
   const input = document.getElementById('passwordInput');
   const error = document.getElementById('passwordError');
   if (input.value === '@suri2026') {
+    localStorage.setItem('suri_sdr_auth', 'true');
     document.getElementById('passwordScreen').style.display = 'none';
     input.classList.remove('error');
     error.classList.remove('visible');
@@ -972,6 +973,11 @@ function checkPassword() {
     input.value = '';
     input.focus();
   }
+}
+
+// Se já autenticado nesse navegador, pula a tela de senha
+if (localStorage.getItem('suri_sdr_auth') === 'true') {
+  document.getElementById('passwordScreen').style.display = 'none';
 }
 
 render();
